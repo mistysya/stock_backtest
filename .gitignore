@@ -1,2 +1,5 @@
 *.csv
 *.pickle
+*.pyc
+*.sqlite3
+*.bak

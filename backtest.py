@@ -9,7 +9,7 @@ from data import Data
 from strategy import Strategy
 
 class Backtest():
-    def __init__(self, sotck_data, strategy, origin_cash, hold_period, ideal_test, start_date, end_date):
+    def __init__(self, stock_data, strategy, origin_cash, hold_period, ideal_test, start_date, end_date):
         #self.stock_data = Data().get_data()
         #self.strategy = Strategy(self.stock_data)
         self.stock_data = stock_data.get_data()
@@ -126,13 +126,13 @@ stock_data.load_data_from_pickle()
 print("Prepare strategy...")
 strategy = Strategy(stock_data.get_data())
 cash = 2000000 / 1000
-period = 180
+period = 60
 print("Prepare backtest...")
-backtest = Backtest(stock_data, strategy, cash, period, False, '2010-1-1', '2020-2-26')
+backtest = Backtest(stock_data, strategy, cash, period, False, '2006-10-2', '2020-3-13')
 print("Run...")
 backtest.run()
 backtest.draw_plot(line_color='red')
-backtest2 = Backtest(stock_data, strategy, cash, period, True, '2010-1-1', '2020-2-26')
+backtest2 = Backtest(stock_data, strategy, cash, period, True, '2006-10-2', '2020-3-13')
 print("Run...")
 backtest2.run()
 backtest2.draw_plot(line_color='blue')

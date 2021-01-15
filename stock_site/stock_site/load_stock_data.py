@@ -133,30 +133,4 @@ if __name__ == '__main__':
     #f.load_data_from_csv(2)
     #f.save_data()
     f.load_data_from_pickle()
-    print(f.get_data()['month'])
-    #idx = f.get_data()['month'].index.get_loc(pd.to_datetime('2020-07-01'))
-    tmp_date = datetime.datetime(2020, 9, 9)
-    #while tmp_date.strftime('%Y-%m-%d') not in f.get_data()['month'].index:
-    #    print(tmp_date)
-    #    tmp_date -= datetime.timedelta(days=1)
-    idx = f.get_data()['close'].index.get_loc(tmp_date.strftime('%Y-%m-%d'))
-    period = 32
-    #print(idx)
-    print(f.get_data()['close'].iloc[idx-period+1:idx+1])
-    #print(f.get_data()['month'].iloc[idx-period+1:idx+1].iloc[-1])
-    #result = f.get_data()['month'].iloc[idx-period+1:idx+1].iloc[-1]
-    #print(result[40000 < result < 70000].index.astype(str))
-    #print(type(f.get_data()['month'].truncate('2020-05-01', '2020-07-01')))
-    '''
-    stock_data = f.get_data()
-    data = stock_data['5ma'].truncate('2020-02-20', '2020-02-21')
-    result_ma5 = data.iloc[-1]
-    data = stock_data['close'].truncate('2020-02-20', '2020-02-21')
-    result_close = data.iloc[-1]
-    result = (result_close / result_ma5 - 1) * 100
-    #res = result - 1
-    print(result_ma5.head(10))
-    print(result_close.head(10))
-    print(result.head(10))
-    #print(res.head(10))
-    '''
+    print(f.get_data()['close'])

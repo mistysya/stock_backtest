@@ -244,8 +244,12 @@ class Strategy():
     def than_month(self, start_date, period, threshold, operation):
         prev_date = start_date - datetime.timedelta(600)
         month = self.stock_data['month'].truncate(prev_date.strftime('%Y-%m-%d'), start_date.strftime('%Y-%m-%d'))
-        cur_month = month.iloc[-2]
-        prev_month = month.iloc[-(threshold+1)]
+        if len(month.index) <= 2 or len(month.index) <= threshold + 1:
+            cur_month = month.iloc[-1]
+            prev_month = month.iloc[-1]
+        else:
+            cur_month = month.iloc[-2]
+            prev_month = month.iloc[-(threshold+1)]
         if operation < 0:
             res = np.where(cur_month < prev_month, True, False)
         else:

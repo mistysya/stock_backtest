@@ -88,6 +88,64 @@ def get_daily_indicator(date):
     write_csv_file(indicator_path, filename, indicator_header, indicator_table)
     print("Finish")
 
+def get_daily_investor(date):
+    url = 'http://www.tse.com.tw/fund/T86?response=csv&date='+date+'&selectType=ALLBUT0999'
+    print(url)
+    print("Download {0} data...".format(date))
+    raw_data = ""
+    raw_data = requests.post(url)
+    print("Download {0} data finish.".format(date))
+    investor_table = []
+    investor_header = []
+    for line in raw_data.text.split('\n'):
+        line = line.replace('",', '|').replace('"', '').replace(',', '').split('|')
+        if (len(line) == 20):
+            if(line[0] == '證券代號'):
+                investor_header = [line[0], line[1].split()[0], "外資買進股數", "外資賣出股數", "外資買賣超股數", line[5],
+                                   line[6], line[7], line[8],line[9], line[10], line[11], line[12], line[13], line[14],
+                                   line[15], line[16], line[17], line[18]]
+            else:
+                investor_table.append([line[0], line[1].split()[0], line[2], line[3], line[4], line[5], line[6], line[7],
+                                       line[8], line[9], line[10], line[11], line[12], line[13], line[14],
+                                       line[15], line[16], line[17], line[18]])
+        elif (len(line) == 17):
+            if(line[0] == '證券代號'):
+                investor_header = [line[0], line[1].split()[0], line[2], line[3], line[4],
+                                   "外資自營商買進股數", "外資自營商賣出股數", "外資自營商買賣超股數", line[5],
+                                   line[6], line[7], line[8], line[9], line[10], line[11],
+                                   line[12], line[13], line[14], line[15]]
+            else:
+                investor_table.append([line[0], line[1].split()[0], line[2], line[3], line[4],
+                                       "0", "0", "0", line[5],
+                                       line[6], line[7], line[8], line[9], line[10], line[11],
+                                       line[12], line[13], line[14], line[15]])
+        elif (len(line) == 13):
+            if(line[0] == '證券代號'):
+                investor_header = [line[0], line[1].split()[0], line[2], line[3], line[4],
+                                   "外資自營商買進股數", "外資自營商賣出股數", "外資自營商買賣超股數", line[5],
+                                   line[6], line[7], line[8], "自營商買進股數(自行買賣)", "自營商賣出股數(自行買賣)",
+                                   "自營商買賣超股數(自行買賣)", "自營商買進股數(避險)", "自營商賣出股數(避險)",
+                                   "自營商買賣超股數(避險)", line[11]]
+            else:
+                investor_table.append([line[0], line[1].split()[0], line[2], line[3], line[4],
+                                       "0", "0", "0", line[5],
+                                       line[6], line[7], line[8], line[9], line[10],
+                                       line[8], "0", "0",
+                                       "0", line[11]])
+        else:
+            continue
+
+    filename = date + '.csv'
+    dirpath = os.path.abspath(os.path.dirname(__file__))
+    indicator_path = os.path.join(dirpath, 'daily_investor')
+
+    print("Write data into {0}".format(filename))
+    if not investor_table:
+        print("Empty table. Finish")
+        return
+    write_csv_file(indicator_path, filename, investor_header, investor_table)
+    print("Finish")
+
 def write_csv_file(path, filename, header, data):
     with open(os.path.join(path, filename), 'w', newline='', encoding = "UTF-8") as csvfile:
         writer = csv.writer(csvfile)
@@ -121,18 +179,16 @@ def get_month_data(year, month):
     # Step3. 篩選出個股月營收資訊
 
     # 3.1 剃除行數錯誤的表格,並將表格合併
-    df = pd.concat([df for df in html_df if df.shape[1] <= 11]) 
+    df = pd.concat([df for df in html_df if df.shape[1] == 11]) 
     # 3.2 設定表格的header
     try:
-        df = df.drop(10, axis = 1)
+        df = df.drop(df.columns[10], axis = 1)
     except:
         print("There is not column 10")
-    df.columns = df.iloc[1]               
+    df.columns = df.columns.get_level_values(1)
 
     # 3.3 剃除重複的欄位
-    df = df.drop(0, axis = 0)              
-    df = df.drop(1, axis = 0)              
-    df = df[df['公司代號'] != '合計'] 
+    df = df[df['公司代號'] != '合計']
 
     # 3.4 重新排序索引值
     df = df.set_index(['公司代號'])
@@ -173,7 +229,7 @@ def get_period_month_data(start_date, end_date):
         if(end_month == 0):
             end_month = 12
             end_year -= 1
-        time.sleep(5)
+        time.sleep(6)
 
 def daterange(start_date, end_date):
     for n in range(int ((end_date - start_date).days)):
@@ -195,12 +251,14 @@ def get_period_data(start_date, end_date, data_type=0):
                 get_daily_data(date)
             elif(data_type == 2):
                 get_daily_indicator(date)
+            elif(data_type == 3):
+                get_daily_investor(date)
             else:
                 None
         except Exception as e:
             print(e)
             print("Download {0} data fail! Abandon this date".format(date))
-        time.sleep(3)
+        time.sleep(5)
 
 def get_today_data(data_type=0):
     date = datetime.date.today().strftime("%Y%m%d")
@@ -208,6 +266,8 @@ def get_today_data(data_type=0):
         get_daily_data(date)
     elif(data_type == 2):
         get_daily_indicator(date)
+    elif(data_type == 3):
+        get_daily_investor(date)
     else:
         None
 
@@ -241,9 +301,70 @@ def remove_duplicate(src_dir):
             for row in modify_data:
                 writer.writerow(row)
 
-get_period_data("20200309", "20200315", data_type=1)
-get_period_data("20200309", "20200315", data_type=2)
-#get_today_data(1)
-#convert_encode('daily_indicator_big5', 'daily_indicator')
-#get_period_month_data("202001", "202002")
-#remove_duplicate('month')
+def remove_etf_in_investor(src_dir):
+    cur_directory = os.path.abspath(os.path.dirname(__file__))
+    source_path = os.path.join(cur_directory, src_dir)
+    print(source_path)
+    file_list = [file_name.split('\\')[-1] for file_name in glob.glob(source_path + '/*.csv')]
+    print(len(file_list))
+
+    for i in range(len(file_list)):
+        modify_data = []
+        with open(os.path.join(source_path, file_list[i]), newline='', encoding = "UTF-8") as infile:
+            rows = csv.reader(infile)
+            for row in rows:
+                if '=' in row[0]: # mean etf
+                    continue
+                else:
+                    modify_data.append(row)
+        with open(os.path.join(source_path, file_list[i]), 'w', newline='', encoding = "UTF-8") as outfile:
+            writer = csv.writer(outfile)
+            for row in modify_data:
+                writer.writerow(row)
+
+def fix_investor_header(src_dir):
+    cur_directory = os.path.abspath(os.path.dirname(__file__))
+    source_path = os.path.join(cur_directory, src_dir)
+    print(source_path)
+    file_list = [file_name.split('\\')[-1] for file_name in glob.glob(source_path + '/*.csv')]
+    print(len(file_list))
+
+    for i in range(len(file_list)):
+        modify_data = []
+        with open(os.path.join(source_path, file_list[i]), newline='', encoding = "UTF-8") as infile:
+            rows = csv.reader(infile)
+            for row in rows:
+                if (row[0] == '證券代號'):
+                    row = [row[0], row[1].split()[0], row[2], row[3], row[4],
+                            "外資自營商買進股數", "外資自營商賣出股數", "外資自營商買賣超股數", row[5],
+                            row[6], row[7], row[8], row[9], row[10], row[11],
+                            row[12], row[13], row[14], row[15]]
+                    modify_data.append(row)
+                else:
+                    modify_data.append(row)
+        with open(os.path.join(source_path, file_list[i]), 'w', newline='', encoding = "UTF-8") as outfile:
+            writer = csv.writer(outfile)
+            for row in modify_data:
+                writer.writerow(row)
+
+if __name__ == '__main__':
+    #get_period_data("20200909", "20200910", data_type=1)
+    #get_period_data("20200909", "20200910", data_type=2)
+    get_period_data("20200909", "20200910", data_type=3)
+    #get_today_data(3)
+    #convert_encode('daily_indicator_big5', 'daily_indicator')
+    #get_period_month_data("202007", "202009")
+    #remove_duplicate('month')
+    #remove_etf_in_investor("daily_investor")
+    #fix_investor_header("daily_investor")
+
+    # For test pandas
+    '''
+    with open("daily_investor\\20191112.csv", newline='', encoding = "UTF-8") as infile:
+        rows = csv.reader(infile)
+        for row in rows:
+            if len(row) != 16:
+                print(row)
+    tmp = pd.read_csv("daily_investor\\20191112.csv")
+    print(tmp.head(5))
+    '''
